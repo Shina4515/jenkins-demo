@@ -1,0 +1,59 @@
+
+name: ServiceNow GitHub Automation Demo
+
+on:
+  workflow_dispatch:
+    inputs:
+      request_id:
+        description: "ServiceNow request number"
+        required: true
+        type: string
+      action:
+        description: "Approved action"
+        required: true
+        type: choice
+        options:
+          - validate_database
+
+permissions:
+  contents: read
+
+jobs:
+  process-request:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Validate service request
+        env:
+          REQUEST_ID: ${{ inputs.request_id }}
+          ACTION: ${{ inputs.action }}
+        run: |
+          if [[ ! "$REQUEST_ID" =~ ^[A-Za-z0-9_-]+$ ]]; then
+            echo "Invalid request ID"
+            exit 1
+          fi
+
+          if [[ "$ACTION" != "validate_database" ]]; then
+            echo "Action not allowed"
+            exit 1
+          fi
+
+          echo "Request validated: $REQUEST_ID"
+
+      - name: Run database validation demo
+        run: |
+          echo "Starting database validation..."
+          echo "Demo result: validation successful"
+          echo "Database validation completed."
+
+      - name: Record result
+        if: always()
+        env:
+          REQUEST_ID: ${{ inputs.request_id }}
+          RESULT: ${{ job.status }}
+        run: |
+          echo "Request ID: $REQUEST_ID"
+          echo "Workflow result: $RESULT"
